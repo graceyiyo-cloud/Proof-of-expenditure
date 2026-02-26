@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>支出證明單 - 智慧精簡版</title>
+    <title>支出證明單 - A4 上半部列印版</title>
     <style>
-        @page { size: A5 landscape; margin: 0; }
-        
+        /* 關鍵：設定 A4 紙張並隱藏邊距以去除網址、日期 */
+        @page { 
+            size: A4 portrait; 
+            margin: 0; 
+        }
+
         :root {
             --primary-color: #4a5d4e; 
             --bg-color: #f4f4f2;      
@@ -21,23 +25,26 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
+        /* 預覽容器 */
         .container {
             width: 100%;
-            max-width: 210mm;
-            overflow-x: auto;
             display: flex;
             justify-content: center;
         }
 
+        /* 證明單本體：設定為 A5 橫向尺寸，但放在 A4 紙上 */
         .sheet {
-            width: 210mm; min-width: 210mm; height: 148mm;
-            background: white; padding: 12mm 15mm;
-            box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            width: 210mm; 
+            height: 148mm; /* A5 高度，正好是 A4 的一半 */
+            background: white; 
+            padding: 15mm 20mm;
+            box-sizing: border-box; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px transparent solid; /* 避免邊界塌陷 */
         }
 
-        h1 { text-align: center; font-size: 32px; letter-spacing: 15px; margin: 0 0 15px 0; }
+        h1 { text-align: center; font-size: 32px; letter-spacing: 15px; margin: 0 0 20px 0; }
         
-        /* 新增：公司名稱與日期同行的佈局 */
         .header-row {
             display: flex;
             justify-content: space-between;
@@ -45,21 +52,14 @@
             margin-bottom: 10px;
             font-size: 18px;
         }
-        .header-row .company-part {
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-        }
+        .header-row .company-part { flex-grow: 1; display: flex; align-items: center; }
         .header-row input#company {
             border-bottom: 1px solid #ccc;
             font-size: 20px;
             padding: 2px 5px;
-            width: 80%; /* 限制寬度避免擠壓日期 */
+            width: 70%;
         }
-        .header-row .date-part {
-            white-space: nowrap;
-            margin-left: 20px;
-        }
+        .header-row .date-part { white-space: nowrap; margin-left: 20px; }
 
         table { width: 100%; border-collapse: collapse; border: 2px solid var(--border-color); }
         td { border: 1px solid var(--border-color); padding: 0; font-size: 19px; vertical-align: middle; }
@@ -71,18 +71,18 @@
         
         input {
             border: none; font-size: 19px; font-family: inherit;
-            background-color: transparent; transition: 0.3s; padding: 10px 15px;
+            background-color: transparent; transition: 0.3s; padding: 12px 15px;
             width: 100%; box-sizing: border-box;
         }
         input:focus { outline: none; background-color: var(--input-focus); }
 
         .amount-td { display: flex; flex-direction: column; padding: 0 !important; }
-        .amount-row { display: flex; align-items: center; padding: 8px 15px; min-height: 45px; }
+        .amount-row { display: flex; align-items: center; padding: 8px 15px; min-height: 50px; }
         .amount-row.top { border-bottom: 1px solid var(--border-color); }
         .currency-label { white-space: nowrap; margin-right: 10px; font-weight: bold; }
 
         .footer { 
-            margin-top: 35px; display: flex; justify-content: space-between; 
+            margin-top: 40px; display: flex; justify-content: space-between; 
             font-size: 18px; padding: 0 10px;
         }
         .footer span { display: flex; align-items: center; font-weight: bold; }
@@ -92,18 +92,34 @@
         button { cursor: pointer; padding: 10px 24px; border-radius: 6px; border: 1px solid #ddd; font-family: sans-serif; }
         .btn-print { background: var(--primary-color); color: white; border: none; }
 
+        /* 列印特定樣式 */
         @media print {
-            body { background: none; padding: 0; }
+            body { 
+                background: none; 
+                padding: 0; 
+                margin: 0; 
+            }
             .controls { display: none; }
-            .sheet { box-shadow: none; border: none; margin: 0; }
-            .header-row input#company { border-bottom: none; } /* 列印時隱藏公司名稱底線 */
+            .container { display: block; }
+            .sheet { 
+                box-shadow: none; 
+                border: none; 
+                margin: 0;
+                width: 210mm;
+                height: 148.5mm; /* 精確的 A4 一半 */
+                /* 確保在 A4 上半部 */
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+            .header-row input#company { border-bottom: none; }
         }
     </style>
 </head>
 <body>
 
     <div class="controls">
-        <button class="btn-print" onclick="handlePrint()">列印 A5 證明單</button>
+        <button class="btn-print" onclick="handlePrint()">列印 A4 上半部</button>
         <button onclick="clearForm()">清空欄位</button>
     </div>
 
