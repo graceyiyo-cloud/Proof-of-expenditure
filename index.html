@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>支出證明單 - 專業優化版</title>
+    <style>
+        @page { size: A5 landscape; margin: 0; }
+        
+        :root {
+            --primary-color: #4a5d4e; 
+            --bg-color: #f4f4f2;      
+            --input-focus: #fffde7;   
+            --border-color: #000000;
+        }
+
+        body {
+            margin: 0; padding: 20px;
+            font-family: "標楷體", "DFKai-SB", serif;
+            background-color: var(--bg-color);
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 210mm;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .sheet {
+            width: 210mm; min-width: 210mm; height: 148mm;
+            background: white; padding: 12mm 15mm;
+            box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        h1 { text-align: center; font-size: 32px; letter-spacing: 15px; margin: 0 0 5px 0; }
+        .date-row { text-align: right; font-size: 18px; margin-bottom: 8px; }
+
+        table { width: 100%; border-collapse: collapse; border: 2px solid var(--border-color); }
+        td { border: 1px solid var(--border-color); padding: 0; font-size: 19px; vertical-align: middle; }
+        
+        .label { 
+            width: 110px; text-align: center; font-weight: bold; 
+            letter-spacing: 5px; padding: 15px 0; background-color: #fcfcfc;
+        }
+        
+        input {
+            border: none; font-size: 19px; font-family: inherit;
+            background-color: transparent; transition: 0.3s; padding: 10px 15px;
+            width: 100%; box-sizing: border-box;
+        }
+        input:focus { outline: none; background-color: var(--input-focus); }
+
+        .amount-td { display: flex; flex-direction: column; padding: 0 !important; }
+        .amount-row { display: flex; align-items: center; padding: 8px 15px; min-height: 45px; }
+        .amount-row.top { border-bottom: 1px solid var(--border-color); }
+        .currency-label { white-space: nowrap; margin-right: 10px; font-weight: bold; }
+
+        .footer { 
+            margin-top: 35px; display: flex; justify-content: space-between; 
+            font-size: 18px; padding: 0 10px;
+        }
+        .footer span { display: flex; align-items: center; font-weight: bold; }
+        .footer input { width: 100px; border-bottom: 1px solid #999; padding: 2px 5px; margin-left: 5px; }
+
+        .controls { margin-bottom: 20px; display: flex; gap: 12px; }
+        button { cursor: pointer; padding: 10px 24px; border-radius: 6px; border: 1px solid #ddd; font-family: sans-serif; }
+        .btn-print { background: var(--primary-color); color: white; border: none; }
+
+        @media print {
+            body { background: none; padding: 0; }
+            .controls { display: none; }
+            .sheet { box-shadow: none; border: none; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <button class="btn-print" onclick="handlePrint()">列印 A5 證明單</button>
+        <button onclick="clearForm()">清空欄位</button>
+    </div>
+
+    <div class="container">
+        <div class="sheet">
+            <h1>支出證明單</h1>
+            <div class="date-row">
+                <input type="text" id="date" style="text-align:right; width: 220px;">
+            </div>
+
+            <table>
+                <tr>
+                    <td class="label">公司名稱</td>
+                    <td><input type="text" id="company"></td>
+                </tr>
+                <tr>
+                    <td class="label">請款人</td>
+                    <td><input type="text" id="requester"></td>
+                </tr>
+                <tr>
+                    <td class="label">事由</td>
+                    <td><input type="text" id="reason"></td>
+                </tr>
+                <tr>
+                    <td class="label">說明</td>
+                    <td><input type="text" id="desc"></td>
+                </tr>
+                <tr>
+                    <td class="label">金額</td>
+                    <td class="amount-td">
+                        <div class="amount-row top">
+                            <span class="currency-label" style="font-family: sans-serif;">NT$</span>
+                            <input type="text" id="amount_num" placeholder="輸入數字" 
+                                   onfocus="removeComma(this)" 
+                                   onblur="addComma(this)" 
+                                   oninput="syncChinese(this)">
+                        </div>
+                        <div class="amount-row">
+                            <span class="currency-label">新台幣</span>
+                            <input type="text" id="amount_word" readonly placeholder="自動生成大寫">
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="footer">
+                <span>主管：<input type="text"></span>
+                <span>會計：<input type="text"></span>
+                <span>收款人：<input type="text"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_COMPANY = "瀞川建設事業有限公司";
+
+        // 1. 輸入時：只更新大寫，不更動小寫框的內容
+        function syncChinese(input) {
+            let val = input.value.replace(/[^\d]/g, '');
+            document.getElementById('amount_word').value = numberToChinese(val);
+        }
+
+        // 2. 點到旁邊時：加上千分位
+        function addComma(input) {
+            let val = input.value.replace(/[^\d]/g, '');
+            if (val !== "") {
+                input.value = Number(val).toLocaleString('en-US');
+            }
+        }
+
+        // 3. 點回欄位時：移除千分位，方便純數字編輯
+        function removeComma(input) {
+            input.value = input.value.replace(/,/g, '');
+        }
+
+        function numberToChinese(n) {
+            const rawNum = n.replace(/,/g, '');
+            if (!/^\d+$/.test(rawNum) || rawNum === "") return "";
+            if (rawNum === "0") return "零元整";
+            const digit = ['零', '壹', '貳', '參', '肆', '伍', '陸', '柒', '捌', '玖'];
+            const unit = [['元', '萬', '億'], ['', '拾', '佰', '仟']];
+            let s = ''; let n_copy = parseInt(rawNum);
+            for (let i = 0; i < unit[0].length && n_copy > 0; i++) {
+                let p = '';
+                for (let j = 0; j < unit[1].length && n_copy > 0; j++) {
+                    p = digit[n_copy % 10] + unit[1][j] + p;
+                    n_copy = Math.floor(n_copy / 10);
+                }
+                s = p.replace(/(零.)*零$/, '').replace(/^$/, '零') + unit[0][i] + s;
+            }
+            return s.replace(/(零.)*零元/, '元').replace(/(零.)+/g, '零').replace(/^整$/, '零元整') + '整';
+        }
+
+        function handlePrint() {
+            localStorage.setItem('saved_company_name', document.getElementById('company').value);
+            window.print();
+        }
+
+        window.onload = () => {
+            document.getElementById('company').value = localStorage.getItem('saved_company_name') || DEFAULT_COMPANY;
+            const today = new Date();
+            const year = today.getFullYear() - 1911;
+            document.getElementById('date').value = `${year} 年 ${today.getMonth()+1} 月 ${today.getDate()} 日`;
+        };
+
+        function clearForm() {
+            ['requester', 'reason', 'desc', 'amount_num', 'amount_word'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+        }
+    </script>
+</body>
+</html>
