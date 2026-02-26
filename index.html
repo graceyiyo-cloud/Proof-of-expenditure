@@ -3,14 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>支出證明單 - A4 上半部列印版</title>
+    <title>支出證明單 - 事由自動補完版</title>
     <style>
-        /* 關鍵：設定 A4 紙張並隱藏邊距以去除網址、日期 */
-        @page { 
-            size: A4 portrait; 
-            margin: 0; 
-        }
-
+        @page { size: A4 portrait; margin: 0; }
+        
         :root {
             --primary-color: #4a5d4e; 
             --bg-color: #f4f4f2;      
@@ -25,39 +21,23 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* 預覽容器 */
-        .container {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
+        .container { width: 100%; display: flex; justify-content: center; }
 
-        /* 證明單本體：設定為 A5 橫向尺寸，但放在 A4 紙上 */
         .sheet {
-            width: 210mm; 
-            height: 148mm; /* A5 高度，正好是 A4 的一半 */
-            background: white; 
-            padding: 15mm 20mm;
-            box-sizing: border-box; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            border: 1px transparent solid; /* 避免邊界塌陷 */
+            width: 210mm; height: 148.5mm;
+            background: white; padding: 15mm 20mm;
+            box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
         h1 { text-align: center; font-size: 32px; letter-spacing: 15px; margin: 0 0 20px 0; }
         
         .header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-bottom: 10px;
-            font-size: 18px;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: 10px; font-size: 18px;
         }
         .header-row .company-part { flex-grow: 1; display: flex; align-items: center; }
         .header-row input#company {
-            border-bottom: 1px solid #ccc;
-            font-size: 20px;
-            padding: 2px 5px;
-            width: 70%;
+            border-bottom: 1px solid #ccc; font-size: 20px; padding: 2px 5px; width: 70%;
         }
         .header-row .date-part { white-space: nowrap; margin-left: 20px; }
 
@@ -92,25 +72,13 @@
         button { cursor: pointer; padding: 10px 24px; border-radius: 6px; border: 1px solid #ddd; font-family: sans-serif; }
         .btn-print { background: var(--primary-color); color: white; border: none; }
 
-        /* 列印特定樣式 */
         @media print {
-            body { 
-                background: none; 
-                padding: 0; 
-                margin: 0; 
-            }
+            body { background: none; padding: 0; margin: 0; }
             .controls { display: none; }
-            .container { display: block; }
             .sheet { 
-                box-shadow: none; 
-                border: none; 
-                margin: 0;
-                width: 210mm;
-                height: 148.5mm; /* 精確的 A4 一半 */
-                /* 確保在 A4 上半部 */
-                position: absolute;
-                top: 0;
-                left: 0;
+                box-shadow: none; border: none; margin: 0;
+                width: 210mm; height: 148.5mm;
+                position: absolute; top: 0; left: 0;
             }
             .header-row input#company { border-bottom: none; }
         }
@@ -143,7 +111,10 @@
                 </tr>
                 <tr>
                     <td class="label">事由</td>
-                    <td><input type="text" id="reason"></td>
+                    <td>
+                        <input type="text" id="reason" list="reason-options" placeholder="輸入關鍵字會自動出現清單...">
+                        <datalist id="reason-options"></datalist>
+                    </td>
                 </tr>
                 <tr>
                     <td class="label">說明</td>
@@ -155,9 +126,7 @@
                         <div class="amount-row top">
                             <span class="currency-label" style="font-family: sans-serif;">NT$</span>
                             <input type="text" id="amount_num" placeholder="輸入數字" 
-                                   onfocus="removeComma(this)" 
-                                   onblur="addComma(this)" 
-                                   oninput="syncChinese(this)">
+                                   onfocus="removeComma(this)" onblur="addComma(this)" oninput="syncChinese(this)">
                         </div>
                         <div class="amount-row">
                             <span class="currency-label">新台幣</span>
@@ -178,22 +147,7 @@
     <script>
         const DEFAULT_COMPANY = "瀞川建設事業有限公司";
 
-        function syncChinese(input) {
-            let val = input.value.replace(/[^\d]/g, '');
-            document.getElementById('amount_word').value = numberToChinese(val);
-        }
-
-        function addComma(input) {
-            let val = input.value.replace(/[^\d]/g, '');
-            if (val !== "") {
-                input.value = Number(val).toLocaleString('en-US');
-            }
-        }
-
-        function removeComma(input) {
-            input.value = input.value.replace(/,/g, '');
-        }
-
+        // 轉換大寫
         function numberToChinese(n) {
             const rawNum = n.replace(/,/g, '');
             if (!/^\d+$/.test(rawNum) || rawNum === "") return "";
@@ -212,19 +166,67 @@
             return s.replace(/(零.)*零元/, '元').replace(/(零.)+/g, '零').replace(/^整$/, '零元整') + '整';
         }
 
+        // 金額欄位互動
+        function syncChinese(input) {
+            let val = input.value.replace(/[^\d]/g, '');
+            document.getElementById('amount_word').value = numberToChinese(val);
+        }
+        function addComma(input) {
+            let val = input.value.replace(/[^\d]/g, '');
+            if (val !== "") input.value = Number(val).toLocaleString('en-US');
+        }
+        function removeComma(input) {
+            input.value = input.value.replace(/,/g, '');
+        }
+
+        // --- 核心功能：事由記憶與自動帶出 ---
+
+        // 更新事由下拉清單 UI
+        function refreshReasonList() {
+            const history = JSON.parse(localStorage.getItem('my_reason_history') || '[]');
+            const datalist = document.getElementById('reason-options');
+            datalist.innerHTML = history.map(item => `<option value="${item}">`).join('');
+        }
+
+        // 儲存新事由
+        function saveReasonToHistory(reason) {
+            if (!reason || reason.trim() === "") return;
+            let history = JSON.parse(localStorage.getItem('my_reason_history') || '[]');
+            
+            // 如果已存在則先刪除（為了讓它排到最前面）
+            history = history.filter(item => item !== reason);
+            history.unshift(reason);
+            
+            if (history.length > 20) history.pop(); // 最多存 20 筆
+            localStorage.setItem('my_reason_history', JSON.stringify(history));
+            refreshReasonList();
+        }
+
         function handlePrint() {
+            // 儲存公司名稱
             localStorage.setItem('saved_company_name', document.getElementById('company').value);
+            
+            // 儲存事由關鍵字
+            saveReasonToHistory(document.getElementById('reason').value);
+            
             window.print();
         }
 
         window.onload = () => {
+            // 帶出公司名稱
             document.getElementById('company').value = localStorage.getItem('saved_company_name') || DEFAULT_COMPANY;
+            
+            // 載入歷史事由
+            refreshReasonList();
+
+            // 設定今日日期
             const today = new Date();
             const year = today.getFullYear() - 1911;
             document.getElementById('date').value = `${year} 年 ${today.getMonth()+1} 月 ${today.getDate()} 日`;
         };
 
         function clearForm() {
+            // 僅清空當次輸入內容
             ['requester', 'reason', 'desc', 'amount_num', 'amount_word'].forEach(id => {
                 document.getElementById(id).value = '';
             });
