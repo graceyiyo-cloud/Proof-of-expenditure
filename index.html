@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>支出證明單 - 專業優化版</title>
+    <title>支出證明單 - 智慧精簡版</title>
     <style>
         @page { size: A5 landscape; margin: 0; }
         
@@ -35,8 +35,31 @@
             box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
-        h1 { text-align: center; font-size: 32px; letter-spacing: 15px; margin: 0 0 5px 0; }
-        .date-row { text-align: right; font-size: 18px; margin-bottom: 8px; }
+        h1 { text-align: center; font-size: 32px; letter-spacing: 15px; margin: 0 0 15px 0; }
+        
+        /* 新增：公司名稱與日期同行的佈局 */
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .header-row .company-part {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+        .header-row input#company {
+            border-bottom: 1px solid #ccc;
+            font-size: 20px;
+            padding: 2px 5px;
+            width: 80%; /* 限制寬度避免擠壓日期 */
+        }
+        .header-row .date-part {
+            white-space: nowrap;
+            margin-left: 20px;
+        }
 
         table { width: 100%; border-collapse: collapse; border: 2px solid var(--border-color); }
         td { border: 1px solid var(--border-color); padding: 0; font-size: 19px; vertical-align: middle; }
@@ -73,6 +96,7 @@
             body { background: none; padding: 0; }
             .controls { display: none; }
             .sheet { box-shadow: none; border: none; margin: 0; }
+            .header-row input#company { border-bottom: none; } /* 列印時隱藏公司名稱底線 */
         }
     </style>
 </head>
@@ -86,15 +110,17 @@
     <div class="container">
         <div class="sheet">
             <h1>支出證明單</h1>
-            <div class="date-row">
-                <input type="text" id="date" style="text-align:right; width: 220px;">
+            
+            <div class="header-row">
+                <div class="company-part">
+                    <input type="text" id="company" placeholder="請輸入公司名稱">
+                </div>
+                <div class="date-part">
+                    <input type="text" id="date" style="text-align:right; width: 200px; padding: 0;">
+                </div>
             </div>
 
             <table>
-                <tr>
-                    <td class="label">公司名稱</td>
-                    <td><input type="text" id="company"></td>
-                </tr>
                 <tr>
                     <td class="label">請款人</td>
                     <td><input type="text" id="requester"></td>
@@ -136,13 +162,11 @@
     <script>
         const DEFAULT_COMPANY = "瀞川建設事業有限公司";
 
-        // 1. 輸入時：只更新大寫，不更動小寫框的內容
         function syncChinese(input) {
             let val = input.value.replace(/[^\d]/g, '');
             document.getElementById('amount_word').value = numberToChinese(val);
         }
 
-        // 2. 點到旁邊時：加上千分位
         function addComma(input) {
             let val = input.value.replace(/[^\d]/g, '');
             if (val !== "") {
@@ -150,7 +174,6 @@
             }
         }
 
-        // 3. 點回欄位時：移除千分位，方便純數字編輯
         function removeComma(input) {
             input.value = input.value.replace(/,/g, '');
         }
